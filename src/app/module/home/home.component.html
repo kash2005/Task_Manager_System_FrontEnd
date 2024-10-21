@@ -1,0 +1,191 @@
+<div class="flex justify-center items-center w-screen h-screen p-4">
+  <div class="flex w-full h-full max-w-full max-h-full flex-col lg:flex-row">
+    <!-- Sidebar for Lists -->
+    <div class="flex flex-col w-full lg:w-1/4 bg-white p-6 md:p-10 rounded-lg md:rounded-none">
+      <h1 class="text-xl md:text-2xl uppercase tracking-widest text-primary">Lists</h1>
+
+      <div class="flex flex-col mt-4 flex-grow">
+        <!-- Loop through each list and display the ellipsis icon on hover -->
+        <div *ngFor="let list of lists" class="relative group">
+          <a href="#" (click)="onListClick(list._id); $event.preventDefault()" [ngClass]="{
+           'active-list': activeListId === list._id, 
+           'bg-gray-200 text-gray-800': activeListId === list._id, 
+           'hover:bg-blue-500 hover:text-white': activeListId !== list._id
+         }"
+            class="flex items-center justify-between p-3 md:p-4 w-full rounded-lg text-gray-600 hover:bg-blue-500 hover:text-white">
+
+            <!-- Display the list title -->
+            <p>{{ list.title }}</p>
+          </a>
+
+          <!-- Ellipsis icon shown when hovering over the whole div -->
+          <i class="fa-solid fa-ellipsis cursor-pointer absolute right-4 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            [ngClass]="{
+          'text-gray-600': activeListId === list._id,  
+          'group-hover:text-white': activeListId !== list._id  
+        }" (click)="toggleDropdown(list._id, $event)">
+          </i>
+
+          <!-- Dropdown menu, shown only for the active list's dropdown -->
+          <div *ngIf="isDropdownOpen && activeListId === list._id"
+            class="absolute right-0 mt-2 w-32 bg-white border rounded-lg shadow-lg z-10">
+            <ul class="py-2">
+              <li class="px-4 py-2 cursor-pointer hover:bg-gray-100" (click)="editList(list._id)">Edit List</li>
+              <li class="px-4 py-2 cursor-pointer hover:bg-gray-100" (click)="deleteList(list._id)">Delete List</li>
+            </ul>
+          </div>
+        </div>
+
+        <button (click)="toggleForm()"
+          class="bg-blue-500 text-white font-bold py-2 px-4 mt-2 rounded-lg hover:bg-blue-600">
+          + New List
+        </button>
+      </div>
+    </div>
+
+    <!-- Tasks List Section -->
+    <div class="flex flex-col flex-grow bg-gray-100 p-6 md:p-10 rounded-lg md:rounded-none mt-6 md:mt-0 md:ml-4">
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl md:text-2xl uppercase tracking-widest text-primary">Tasks</h1>
+
+        <!-- Circle Plus Icon Button to Add Task -->
+        <button (click)="openAddTaskForm()"
+          class="flex items-center justify-center bg-primary text-blue-600 rounded-full p-2 hover:bg-secondary transition duration-200">
+          <!-- Font Awesome Circle Plus Icon -->
+          <i class="fas fa-plus-circle fa-2x"></i>
+        </button>
+      </div>
+
+      <div *ngIf="showNoTasksMessage" class="bg-white p-4 md:p-5 mt-4 rounded-lg opacity-80">
+        <p>No tasks available for this list.</p>
+      </div>
+
+      <div *ngFor="let task of tasks"
+        class="bg-white p-4 md:p-5 mt-4 rounded-lg cursor-pointer flex justify-between items-center">
+        <p>{{ task.title }}</p> <!-- Display the title of the task -->
+        <div class="flex items-center">
+          <!-- Edit Icon -->
+          <button (click)="editTask(task._id)" class="text-blue-600 hover:text-primary transition duration-200 mr-2">
+            <i class="fas fa-edit"></i>
+          </button>
+          <!-- Delete Icon -->
+          <button (click)="deleteTask(task._id)" class="text-red-600 transition duration-200">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form for Creating a New List -->
+  <div *ngIf="showForm" class="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+      <h2 class="text-xl font-bold mb-4 text-center">Create a New List</h2>
+      <form [formGroup]="createListForm" (ngSubmit)="onCreateList()">
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm mb-2" for="topic">Topic</label>
+          <input
+            class="border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-1 focus:ring-blue-500"
+            id="topic" type="text" formControlName="topic" placeholder="Enter list name.."
+            [ngClass]="{ 'focus:ring-red-600 border-red-600': topic?.invalid && submitted }" />
+          <div *ngIf="topic?.invalid && submitted" class="text-red-600 text-sm">
+            <div *ngIf="topic?.errors?.['required']">Topic is required*</div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" (click)="onCancel()"
+            class="bg-gray-400 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-500">
+            Cancel
+          </button>
+          <button type="submit" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600">
+            Create
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Form for Creating a New Task -->
+  <div *ngIf="showTaskForm" class="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+      <h2 class="text-xl font-bold mb-4 text-center">Create a New Task</h2>
+      <form [formGroup]="createTaskForm" (ngSubmit)="onCreateTask()">
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm mb-2" for="topic">Topic</label>
+          <input
+            class="border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-1 focus:ring-blue-500"
+            id="topic" type="text" formControlName="taskTopic" placeholder="Enter task name.."
+            [ngClass]="{ 'focus:ring-red-600 border-red-600': taskTopic?.invalid && submitted }" />
+          <div *ngIf="taskTopic?.invalid && submitted" class="text-red-600 text-sm">
+            <div *ngIf="taskTopic?.errors?.['required']">Topic is required*</div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" (click)="onCancel()"
+            class="bg-gray-400 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-500">
+            Cancel
+          </button>
+          <button type="submit" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600">
+            Create
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Form for Editing a List -->
+  <div *ngIf="isEditList" class="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+      <h2 class="text-xl font-bold mb-4 text-center">Edit this List</h2>
+      <form [formGroup]="createListForm" (ngSubmit)="onEditList(activeListId)">
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm mb-2" for="topic">Topic</label>
+          <input
+            class="border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-1 focus:ring-blue-500"
+            id="topic" type="text" formControlName="topic" placeholder="Enter list name.."
+            [ngClass]="{ 'focus:ring-red-600 border-red-600': topic?.invalid && submitted }" />
+          <div *ngIf="topic?.invalid && submitted" class="text-red-600 text-sm">
+            <div *ngIf="topic?.errors?.['required']">Topic is required*</div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" (click)="onCancel()"
+            class="bg-gray-400 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-500">
+            Cancel
+          </button>
+          <button type="submit" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600">
+            Edit
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Form for Edit a Task -->
+  <div *ngIf="isEditTask" class="fixed inset-0 flex justify-center items-center bg-gray-900 bg-opacity-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+      <h2 class="text-xl font-bold mb-4 text-center">Edit a Task</h2>
+      <form [formGroup]="createTaskForm" (ngSubmit)="onEditTask(openEditTaskId)">
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm mb-2" for="topic">Topic</label>
+          <input
+            class="border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-1 focus:ring-blue-500"
+            id="topic" type="text" formControlName="taskTopic" placeholder="Enter task name.."
+            [ngClass]="{ 'focus:ring-red-600 border-red-600': taskTopic?.invalid && submitted }" />
+          <div *ngIf="taskTopic?.invalid && submitted" class="text-red-600 text-sm">
+            <div *ngIf="taskTopic?.errors?.['required']">Topic is required*</div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" (click)="onCancel()"
+            class="bg-gray-400 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-500">
+            Cancel
+          </button>
+          <button type="submit" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600">
+            Edit
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
